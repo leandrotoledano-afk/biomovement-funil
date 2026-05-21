@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Funil BioMovement</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 24px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { font-size: 32px; font-weight: 700; margin-bottom: 20px; }
+        .search { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border-radius: 8px; 
+            background: #1e293b; 
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        .stats { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #1e293b;
+            border-left: 4px solid #16a34a;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .stat-detail { font-size: 12px; color: #94a3b8; }
+        .deals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        .deal-card {
+            background: #1e293b;
+            border-left: 4px solid #16a34a;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .deal-empresa { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .deal-local { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+        .deal-escolas { font-size: 13px; color: #60a5fa; margin-bottom: 4px; }
+        .deal-mrr { font-size: 13px; color: #4ade80; margin-bottom: 8px; }
+        .deal-acao { 
+            font-size: 11px; 
+            background: #5b21b6; 
+            color: #c084fc;
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .deal-status {
+            width: 100%;
+            padding: 6px;
+            border-radius: 4px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 12px;
+            border: 1px solid #334155;
+            cursor: pointer;
+        }
+        .loading { text-align: center; padding: 40px; font-size: 14px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 FUNIL BIOMOVEMENT</h1>
+        <input type="text" class="search" id="search" placeholder="Buscar empresa, município ou contato...">
+        
+        <div class="stats" id="stats"></div>
+        <div class="deals-grid" id="deals">
+            <div class="loading">Carregando deals...</div>
+        </div>
+    </div>
+
+    <script>
+        async function loadDeals() {
+            try {
+                const { createClient } = window.supabase;
+                
+                const supabase = createClient(
+                    'https://bztlrboznicyboaqpnft.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6dGxyYm96bmpjeWJvcXBuZmx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMzQ2NDYsImV4cCI6MjA5NDkxMDY0Nn0.AMvddsMytZ-bVRD72h8UcznC0rKl7GFbIoHxSiIb7Bk'
+                );
+
+                const { data, error } = await supabase.from('deals').select('*');
+                
+                if (error) throw error;
+
+                window.allDeals = data || [];
+                renderDeals();
+                updateStats();
+            } catch (err) {
+                document.getElementById('deals').innerHTML = `<div class="loading" style="color: #f87171;">Erro ao carregar: ${err.message}</div>`;
+            }
+        }
+
+        const STATUSES = [
+            { id: 'assinado', label: '✅ Assinado', color: '#16a34a' },
+            { id: 'fechamento', label: '🟡 Fechamento', color: '#ca8a04' },
+            { id: 'franqueado', label: '🤝 Franqueado', color: '#2563eb' },
+            { id: 'conversando', label: '💬 Conversando', color: '#9333ea' },
+            { id: 'follow', label: '📞 Follow', color: '#dc2626' },
+            { id: 'decreto', label: '📍 Decreto', color: '#ea580c' }
+        ];
+
+        function filterDeals() {
+            const query = document.getElementById('search').value.toLowerCase();
+            return (window.allDeals || []).filter(d => 
+                (d.empresa + ' ' + d.local + ' ' + (d.contato || '')).toLowerCase().includes(query)
+            );
+        }
+
+        function updateStats() {
+            const filtered = filterDeals();
+            const statsHtml = STATUSES.map(status => {
+                const items = filtered.filter(d => d.status === status.id);
+                const mrr = items.reduce((a, d) => a + (d.mrr || 0), 0);
+                const escolas = items.reduce((a, d) => a + (d.escolas || d.escolas_municipais || 0), 0);
+                return `
+                    <div class="stat-card" style="border-left-color: ${status.color}">
+                        <div class="stat-label">${status.label}</div>
+                        <div class="stat-value">${items.length}</div>
+                        <div class="stat-detail">
+                            ${escolas > 0 ? `${escolas.toLocaleString()} esc` : '–'}
+                            ${mrr > 0 ? ` | R$ ${(mrr / 1000).toFixed(1)}k` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('stats').innerHTML = statsHtml;
+        }
+
+        function renderDeals() {
+            const filtered = filterDeals();
+            const html = filtered.map(deal => {
+                const status = STATUSES.find(s => s.id === deal.status);
+                return `
+                    <div class="deal-card" style="border-left-color: ${status.color}">
+                        <div class="deal-empresa">${deal.empresa}</div>
+                        <div class="deal-local">${deal.local}</div>
+                        ${deal.escolas_municipais ? `<div class="deal-escolas">🏫 ${deal.escolas_municipais.toLocaleString()} escolas municipais</div>` : ''}
+                        ${deal.escolas ? `<div class="deal-escolas">${deal.escolas} escolas</div>` : ''}
+                        ${deal.mrr ? `<div class="deal-mrr">R$ ${deal.mrr.toLocaleString()}/mês</div>` : ''}
+                        ${deal.contato ? `<div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">${deal.contato}</div>` : ''}
+                        ${deal.acao ? `<div class="deal-acao">→ ${deal.acao}</div>` : ''}
+                        <select class="deal-status" onchange="changeStatus('${deal.id}', this.value)">
+                            ${STATUSES.map(s => `<option value="${s.id}" ${s.id === deal.status ? 'selected' : ''}>${s.label}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('deals').innerHTML = html || '<div class="loading">Nenhum deal encontrado</div>';
+        }
+
+        async function changeStatus(id, newStatus) {
+            try {
+                const { createClient } = window.supabase;
+                const supabase = createClient(
+                    'https://bztlrboznicyboaqpnft.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6dGxyYm96bmpjeWJvcXBuZmx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMzQ2NDYsImV4cCI6MjA5NDkxMDY0Nn0.AMvddsMytZ-bVRD72h8UcznC0rKl7GFbIoHxSiIb7Bk'
+                );
+                await supabase.from('deals').update({ status: newStatus }).eq('id', id);
+                loadDeals();
+            } catch (err) {
+                alert('Erro ao atualizar status: ' + err.message);
+            }
+        }
+
+        document.getElementById('search').addEventListener('input', () => {
+            renderDeals();
+            updateStats();
+        });
+
+        // Carregar script do Supabase e depois carregar deals
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = loadDeals;
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
