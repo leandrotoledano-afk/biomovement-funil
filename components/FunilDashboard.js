@@ -1,79 +1,103 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useState } from "react"
 
 export default function FunilDashboard() {
-
-  const [deals,setDeals]=useState([]);
+  const [deals,setDeals]=useState([])
+  const [loading,setLoading]=useState(true)
 
   useEffect(()=>{
 
     fetch("/api/deals")
       .then(r=>r.json())
-      .then(data=>setDeals(data));
+      .then(d=>{
+        setDeals(d)
+        setLoading(false)
+      })
 
-  },[]);
+  },[])
+
+  const totalMRR=deals.reduce(
+    (a,b)=>a+(Number(b.mrr)||0),0
+  )
 
   return (
 
-    <div style={{
-      background:"#081229",
-      color:"#fff",
-      minHeight:"100vh",
-      padding:"40px",
-      fontFamily:"Arial"
-    }}>
+<div style={{
+background:"#081229",
+minHeight:"100vh",
+padding:"40px",
+color:"#fff",
+fontFamily:"Arial"
+}}>
 
-      <h1>FUNIL BIOMOVEMENT</h1>
+<h1 style={{
+color:"#69ef77",
+fontSize:"52px"
+}}>
+🟢 FUNIL BIOMOVEMENT
+</h1>
 
-      <h2>Total Deals: {deals.length}</h2>
+<p>
+Dashboard Operacional
+|
+{deals.length} deals
+|
+MRR R$
+{totalMRR.toLocaleString()}
+</p>
 
-      <table
-        style={{
-          width:"100%",
-          marginTop:"30px",
-          borderCollapse:"collapse"
-        }}
-      >
+<div style={{
+display:"grid",
+gridTemplateColumns:
+"repeat(auto-fit,minmax(320px,1fr))",
+gap:"20px",
+marginTop:"40px"
+}}>
 
-        <thead>
+{
+loading
+?
+"Carregando..."
+:
+deals.map(d=>(
 
-          <tr>
+<div key={d.id}
+style={{
+background:"#101c35",
+padding:"25px",
+borderRadius:"14px",
+borderLeft:"4px solid #69ef77"
+}}>
 
-            <th>Empresa</th>
-            <th>Status</th>
-            <th>Local</th>
-            <th>Escolas</th>
-            <th>MRR</th>
+<h3>{d.empresa}</h3>
 
-          </tr>
+<p>{d.local}</p>
 
-        </thead>
+<p>
+📍 {d.escolas || 0}
+escolas
+</p>
 
-        <tbody>
+<p>
+💰 R$
+{Number(d.mrr||0)
+.toLocaleString()}
+</p>
 
-          {deals.map(d=>(
+<p>
+Status:
+{d.status}
+</p>
 
-            <tr key={d.id}>
+</div>
 
-              <td>{d.empresa}</td>
+))
+}
 
-              <td>{d.status}</td>
+</div>
 
-              <td>{d.local}</td>
+</div>
 
-              <td>{d.escolas}</td>
-
-              <td>R$ {d.mrr}</td>
-
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  );
+)
 
 }
