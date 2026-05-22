@@ -15,7 +15,7 @@ export default function FunilDashboard() {
   return (
 
     <div style={{
-      background:"#0b132b",
+      background:"#081229",
       color:"#fff",
       minHeight:"100vh",
       padding:"40px",
@@ -24,12 +24,12 @@ export default function FunilDashboard() {
 
       <h1>FUNIL BIOMOVEMENT</h1>
 
-      <p>Total deals: {deals.length}</p>
+      <h2>Total Deals: {deals.length}</h2>
 
       <table
         style={{
           width:"100%",
-          marginTop:"20px",
+          marginTop:"30px",
           borderCollapse:"collapse"
         }}
       >
@@ -55,9 +55,13 @@ export default function FunilDashboard() {
             <tr key={d.id}>
 
               <td>{d.empresa}</td>
+
               <td>{d.status}</td>
+
               <td>{d.local}</td>
+
               <td>{d.escolas}</td>
+
               <td>R$ {d.mrr}</td>
 
             </tr>
@@ -70,6 +74,6 @@ export default function FunilDashboard() {
 
     </div>
 
-  )
+  );
 
 }
